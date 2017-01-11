@@ -36,8 +36,8 @@
   :group 'black-book
   :type 'file)
 
-(defcustom black-book-prefix "p"
-  "The prefix key for all notes on people."
+(defcustom black-book-capture-prefix "p"
+  "The prefix key for all capture templates."
   :group 'black-book
   :type 'string)
 
@@ -76,7 +76,7 @@
     (puthash initials new-initials-list first-hash)
     (puthash first-initial first-hash *table-of-inputs*)))
 
-(defun make-an-entry (key name)
+(defun make-a-capture-entry (key name)
   "Create a capture template on KEY for NAME."
   `(,key ,name entry
          (file+headline ,black-book-file ,name)
@@ -85,35 +85,39 @@
 
 %?"))
 
-(defun format-first-letter-table-one-name (initials name-list)
-  "Make a capture template for INITIALS when NAME-LIST is just one name."
-  (let ((prefix (concat black-book-prefix initials))
-        (label (car name-list)))
-    (push (make-an-entry prefix label) *list-of-outputs*)))
+(defun make-a-capture-prefix (key label)
+  "Create a prefix capture template on KEY using LABEL."
+  (list key label))
 
-(defun format-first-letter-table-multi-names (initials name-list)
+(defun format-first-letter-table-one-name-for-captures (initials name-list)
+  "Make a capture template for INITIALS when NAME-LIST is just one name."
+  (let ((prefix (concat black-book-capture-prefix initials))
+        (label (car name-list)))
+    (push (make-a-capture-entry prefix label) *list-of-outputs*)))
+
+(defun format-first-letter-table-multi-names-for-captures (initials name-list)
   "Make capture templates for INITIALS when NAME-LIST is more than one name."
-  (let ((prefix (concat black-book-prefix initials))
+  (let ((prefix (concat black-book-capture-prefix initials))
         (label (format "People - All %ss" (upcase initials)))
         (i 0)
         one-name)
     (while (setq i (1+ i) one-name (pop name-list))
-      (push (make-an-entry (concat prefix (int-to-string i)) one-name)
+      (push (make-a-capture-entry (concat prefix (int-to-string i)) one-name)
             *list-of-outputs*))
-    (push `(,prefix ,label) *list-of-outputs*)))
+    (push (make-a-capture-prefix prefix label) *list-of-outputs*)))
 
-(defun format-first-letter-table (initials name-list)
+(defun format-first-letter-table-for-captures (initials name-list)
   "Make capture templates for INITIALS and NAME-LIST."
   (if (null (cadr name-list))
-      (format-first-letter-table-one-name initials name-list)
-    (format-first-letter-table-multi-names initials name-list)))
+      (format-first-letter-table-one-name-for-captures initials name-list)
+    (format-first-letter-table-multi-names-for-captures initials name-list)))
 
-(defun format-big-table (first-letter initials-hash)
+(defun format-big-table-for-captures (first-letter initials-hash)
   "Make capture templates for FIRST-LETTER and INITIALS-HASH."
-  (let ((prefix (concat black-book-prefix first-letter))
+  (let ((prefix (concat black-book-capture-prefix first-letter))
         (label (format "People - %ss" (upcase first-letter))))
-    (maphash 'format-first-letter-table initials-hash)
-    (push `(,prefix ,label) *list-of-outputs*)))
+    (maphash 'format-first-letter-table-for-captures initials-hash)
+    (push (make-a-capture-prefix prefix label) *list-of-outputs*)))
 
 (defun add-lbb-capture-templates ()
   "Add capture templates for names in the little black book."
@@ -123,7 +127,8 @@
                           (expand-file-name black-book-file org-directory))
       (org-map-entries 'add-person-at-point-to-big-table "+LEVEL=1")
       (maphash 'format-big-table *table-of-inputs*)
-      (push `(,black-book-prefix "People") *list-of-outputs*)
+      (push (make-a-capture-prefix black-book-capture-prefix "People")
+            *list-of-outputs*)
       (setf org-capture-templates
             (append org-capture-templates *list-of-outputs*)))))
 
@@ -131,7 +136,7 @@
   "Remove capture templates created from the little black book."
   (setf org-capture-templates
         (-remove #'(lambda (elt)
-                     (equal black-book-prefix
+                     (equal black-book-capture-prefix
                             (substring-no-properties (car elt) 0 1)))
                  org-capture-templates)))
 
