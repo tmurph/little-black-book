@@ -30,6 +30,7 @@
 ;;; Code:
 (require 'org-capture)
 (require 'dash)
+(require 'ert)
 
 (defcustom black-book-file "people.org"
   "The file where I keep notes on people."
