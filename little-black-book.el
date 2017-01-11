@@ -135,6 +135,13 @@
                         (throw 'flag to-throw))) h1)
          (throw 'flag t))))
 
+(defun lbb-build-table-of-inputs (buf)
+  "Parse headlines in BUF, and return a hash table."
+  (let ((*table-of-inputs* (make-hash-table :test 'equal)))
+    (with-current-buffer buf
+      (org-map-entries 'add-person-at-point-to-big-table "+LEVEL=1"))
+    *table-of-inputs*))
+
 (defun lbb-add-capture-templates ()
   "Add capture templates for names in the little black book."
   (let ((*table-of-inputs* (make-hash-table :test 'equal))
