@@ -1,4 +1,4 @@
-;;; little-black-book --- Add my names to Org Capture Templates
+;;; little-black-book --- Add my names to Org Captures and Agendas
 
 ;; Copyright (C) 2017  Trevor Murphy
 
@@ -22,12 +22,12 @@
 
 ;;; Commentary:
 
-;;; I'm trying to keep a little black book on everybody.  It's tough
-;;; to manage all these captures through the customize interface,
-;;; though.  So let's just not do that, and instead use this code
-;;; instead.
+;; I'm trying to keep a little black book on everybody.  It's tough to
+;; manage capture templates / agenda commands through the customize
+;; interface, though.  So let's use code instead.
 
 ;;; Code:
+
 (require 'org-capture)
 (require 'dash)
 (require 'ert)
