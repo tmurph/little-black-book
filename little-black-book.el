@@ -169,5 +169,57 @@
   (lbb-remove-capture-templates)
   (lbb-add-capture-templates))
 
+;;; testing
+
+(ert-deftest lbb-test-build-one-input ()
+  "Test parsing of an org headline into the hash table format."
+  (let ((expected-table
+         #s(hash-table
+            test equal
+            data ("j" #s(hash-table
+                         test equal
+                         data ("jm" ("Joseph Marquez"))))))
+        (actual-table
+         (with-temp-buffer
+           (insert "* Joseph Marquez\n")
+           (org-mode)
+           (lbb-build-table-of-inputs (current-buffer)))))
+    (should (hash-table-equal expected-table actual-table))))
+
+(ert-deftest lbb-test-build-two-inputs ()
+  "Test parsing of two org headlines into the hash table format."
+  (let ((expected-table
+         #s(hash-table
+            test equal
+            data ("j" #s(hash-table
+                         test equal
+                         data ("jm" ("Joseph Marquez")))
+                  "a" #s(hash-table
+                         test equal
+                         data ("al" ("Adam Lindgren"))))))
+        (actual-table
+         (with-temp-buffer
+           (insert "* Joseph Marquez\n")
+           (insert "* Adam Lindgren\n")
+           (org-mode)
+           (lbb-build-table-of-inputs (current-buffer)))))
+    (should (hash-table-equal expected-table actual-table))))
+
+(ert-deftest lbb-test-build-two-inputs-same-initials ()
+  "Test parsing of two org headlines into the hash table format."
+  (let ((expected-table
+         #s(hash-table
+            test equal
+            data ("j" #s(hash-table
+                         test equal
+                         data ("jm" ("Just Mango" "Joseph Marquez"))))))
+        (actual-table
+         (with-temp-buffer
+           (insert "* Joseph Marquez\n")
+           (insert "* Just Mango\n")
+           (org-mode)
+           (lbb-build-table-of-inputs (current-buffer)))))
+    (should (hash-table-equal expected-table actual-table))))
+
 (provide 'little-black-book)
 ;;; little-black-book.el ends here
