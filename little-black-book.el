@@ -288,6 +288,23 @@
                            data ("jm" ("Joseph Marquez"))))))))
     (should (equal expected-list actual-list))))
 
+(ert-deftest lbb-test-format-one-agenda ()
+  "Test formatting just one agenda template."
+  (let* ((expected-list
+          `((,black-book-agenda-prefix . "People")
+            (,(concat black-book-agenda-prefix "j") . "People - Js")
+            (,(concat black-book-agenda-prefix "jm")
+             "Joseph Marquez" tags "josephmarquez+chat"
+             ((org-agenda-files '(,black-book-file))))))
+         (actual-list
+          (lbb-build-list-of-agendas
+           #s(hash-table
+              test equal
+              data ("j" #s(hash-table
+                           test equal
+                           data ("jm" ("Joseph Marquez"))))))))
+    (should (equal expected-list actual-list))))
+
 (ert-deftest lbb-test-build-two-inputs ()
   "Test parsing of two org headlines into the hash table format."
   (let ((expected-table
@@ -333,6 +350,30 @@
                            data ("al" ("Adam Lindgren"))))))))
     (should (equal expected-list actual-list))))
 
+(ert-deftest lbb-test-format-two-agendas ()
+  "Test formatting two agenda templates."
+  (let* ((expected-list
+          `((,black-book-agenda-prefix . "People")
+            (,(concat black-book-agenda-prefix "a") . "People - As")
+            (,(concat black-book-agenda-prefix "al")
+             "Adam Lindgren" tags "adamlindgren+chat"
+             ((org-agenda-files '(,black-book-file))))
+            (,(concat black-book-agenda-prefix "j") . "People - Js")
+            (,(concat black-book-agenda-prefix "jm")
+             "Joseph Marquez" tags "josephmarquez+chat"
+             ((org-agenda-files '(,black-book-file))))))
+         (actual-list
+          (lbb-build-list-of-agendas
+           #s(hash-table
+              test equal
+              data ("j" #s(hash-table
+                           test equal
+                           data ("jm" ("Joseph Marquez")))
+                    "a" #s(hash-table
+                           test equal
+                           data ("al" ("Adam Lindgren"))))))))
+    (should (equal expected-list actual-list))))
+
 (ert-deftest lbb-test-build-two-inputs-same-initials ()
   "Test parsing of two org headlines into the hash table format."
   (let ((expected-table
@@ -366,6 +407,27 @@
             ))
          (actual-list
           (lbb-build-list-of-captures
+           #s(hash-table
+              test equal
+              data ("j" #s(hash-table
+                           test equal
+                           data ("jm" ("Just Mango" "Joseph Marquez"))))))))
+    (should (equal expected-list actual-list))))
+
+(ert-deftest lbb-test-format-two-agendas-same-initials ()
+  "Test formatting two agenda templates."
+  (let* ((expected-list
+          `((,black-book-agenda-prefix . "People")
+            (,(concat black-book-agenda-prefix "j") . "People - Js")
+            (,(concat black-book-agenda-prefix "jm") . "People - All JMs")
+            (,(concat black-book-agenda-prefix "jm2")
+             "Joseph Marquez" tags "josephmarquez+chat"
+             ((org-agenda-files '(,black-book-file))))
+            (,(concat black-book-agenda-prefix "jm1")
+             "Just Mango" tags "justmango+chat"
+             ((org-agenda-files '(,black-book-file))))))
+         (actual-list
+          (lbb-build-list-of-agendas
            #s(hash-table
               test equal
               data ("j" #s(hash-table
