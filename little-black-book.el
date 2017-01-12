@@ -120,6 +120,21 @@
     (maphash 'format-first-letter-table-for-captures initials-hash)
     (push (make-a-capture-prefix prefix label) *list-of-outputs*)))
 
+(defun hash-table-equal (h1 h2)
+  "Return t if H1 and H2 are equal, nil otherwise."
+  (and (= (hash-table-count h1) (hash-table-count h2))
+       (catch 'flag
+         (maphash #'(lambda (k v1)
+                      (let ((v2 (gethash k h2))
+                            to-throw)
+                        (cond
+                         ((hash-table-p v1)
+                          (setq to-throw (hash-table-equal v1 v2)))
+                         (t
+                          (setq to-throw (equal v1 v2))))
+                        (throw 'flag to-throw))) h1)
+         (throw 'flag t))))
+
 (defun lbb-add-capture-templates ()
   "Add capture templates for names in the little black book."
   (let ((*table-of-inputs* (make-hash-table :test 'equal))
