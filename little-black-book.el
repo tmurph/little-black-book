@@ -42,6 +42,11 @@
   :group 'black-book
   :type 'string)
 
+(defcustom black-book-agenda-prefix "p"
+  "The prefix key for all agenda commands."
+  :group 'black-book
+  :type 'string)
+
 (defvar *table-of-inputs* (make-hash-table :test 'equal)
   "Use a dynamically scoped variable to keep track of inputs.")
 
@@ -66,6 +71,11 @@
   (or (gethash key table)
       (puthash key nil table)))
 
+(defun get-agenda-search-string (name)
+  "Get the tag search string for NAME."
+  (concat (mapconcat 'downcase (split-string name) "")
+          "+chat"))
+
 (defun add-person-at-point-to-big-table ()
   "Parse the person (headline) at point into global variable *big-table*."
   (let* ((name (org-element-property :title (org-element-at-point)))
@@ -86,15 +96,30 @@
 
 %?"))
 
+(defun make-an-agenda-entry (key name)
+  "Create an agenda command on KEY for NAME."
+  `(,key ,name tags ,(get-agenda-search-string name)
+         ((org-agenda-files '(,black-book-file)))))
+
 (defun make-a-capture-prefix (key label)
   "Create a prefix capture template on KEY using LABEL."
   (list key label))
+
+(defun make-an-agenda-prefix (key label)
+  "Create a prefix agenda command on KEY using LABEL."
+  (cons key label))
 
 (defun format-first-letter-table-one-name-for-captures (initials name-list)
   "Make a capture template for INITIALS when NAME-LIST is just one name."
   (let ((prefix (concat black-book-capture-prefix initials))
         (label (car name-list)))
     (push (make-a-capture-entry prefix label) *list-of-outputs*)))
+
+(defun format-first-letter-table-one-name-for-agendas (initials name-list)
+  "Make an agenda command for INITIALS when NAME-LIST is just one name."
+  (let ((prefix (concat black-book-agenda-prefix initials))
+        (label (car name-list)))
+    (push (make-an-agenda-entry prefix label) *list-of-outputs*)))
 
 (defun format-first-letter-table-multi-names-for-captures (initials name-list)
   "Make capture templates for INITIALS when NAME-LIST is more than one name."
@@ -107,11 +132,28 @@
             *list-of-outputs*))
     (push (make-a-capture-prefix prefix label) *list-of-outputs*)))
 
+(defun format-first-letter-table-multi-names-for-agendas (initials name-list)
+  "Make agenda commands for INITIALS when NAME-LIST is more than one name."
+  (let ((prefix (concat black-book-agenda-prefix initials))
+        (label (format "People - All %ss" (upcase initials)))
+        (i 0)
+        one-name)
+    (while (setq i (1+ i) one-name (pop name-list))
+      (push (make-an-agenda-entry (concat prefix (int-to-string i)) one-name)
+            *list-of-outputs*))
+    (push (make-an-agenda-prefix prefix label) *list-of-outputs*)))
+
 (defun format-first-letter-table-for-captures (initials name-list)
   "Make capture templates for INITIALS and NAME-LIST."
   (if (null (cadr name-list))
       (format-first-letter-table-one-name-for-captures initials name-list)
     (format-first-letter-table-multi-names-for-captures initials name-list)))
+
+(defun format-first-letter-table-for-agendas (initials name-list)
+  "Make agenda commands for INITIALS and NAME-LIST."
+  (if (null (cadr name-list))
+      (format-first-letter-table-one-name-for-agendas initials name-list)
+    (format-first-letter-table-multi-names-for-agendas initials name-list)))
 
 (defun format-big-table-for-captures (first-letter initials-hash)
   "Make capture templates for FIRST-LETTER and INITIALS-HASH."
@@ -119,6 +161,13 @@
         (label (format "People - %ss" (upcase first-letter))))
     (maphash 'format-first-letter-table-for-captures initials-hash)
     (push (make-a-capture-prefix prefix label) *list-of-outputs*)))
+
+(defun format-big-table-for-agendas (first-letter initials-hash)
+  "Make agenda commands for FIRST-LETTER and INITIALS-HASH."
+  (let ((prefix (concat black-book-agenda-prefix first-letter))
+        (label (format "People - %ss" (upcase first-letter))))
+    (maphash 'format-first-letter-table-for-agendas initials-hash)
+    (push (make-an-agenda-prefix prefix label) *list-of-outputs*)))
 
 (defun hash-table-equal (h1 h2)
   "Return t if H1 and H2 are equal, nil otherwise."
@@ -150,11 +199,28 @@
           *list-of-outputs*)
     *list-of-outputs*))
 
+(defun lbb-build-list-of-agendas (table)
+  "Format TABLE entries into agenda command format."
+  (let (*list-of-outputs*)
+    (maphash 'format-big-table-for-agendas table)
+    (push (make-an-agenda-prefix black-book-agenda-prefix "People")
+          *list-of-outputs*)
+    *list-of-outputs*))
+
 (defun lbb-add-capture-templates ()
   "Add capture templates for names in the little black book."
   (setf org-capture-templates
         (append org-capture-templates
                 (lbb-build-list-of-captures
+                 (lbb-build-table-of-inputs
+                  (find-file-noselect
+                   (expand-file-name black-book-file org-directory)))))))
+
+(defun lbb-add-agenda-commands ()
+  "Add agenda commands for names in the little black book."
+  (setf org-agenda-custom-commands
+        (append org-agenda-custom-commands
+                (lbb-build-list-of-agendas
                  (lbb-build-table-of-inputs
                   (find-file-noselect
                    (expand-file-name black-book-file org-directory)))))))
@@ -167,11 +233,25 @@
                             (substring-no-properties (car elt) 0 1)))
                  org-capture-templates)))
 
+(defun lbb-remove-agenda-commands ()
+  "Remove agenda commands created from the little black book."
+  (setf org-agenda-custom-commands
+        (-remove #'(lambda (elt)
+                     (equal black-book-agenda-prefix
+                            (substring-no-properties (car elt) 0 1)))
+                 org-agenda-custom-commands)))
+
 (defun lbb-set-up-capture-templates ()
   "Set up little black book capture templates."
   (interactive)
   (lbb-remove-capture-templates)
   (lbb-add-capture-templates))
+
+(defun lbb-set-up-agenda-commands ()
+  "Set up little black book agenda commands."
+  (interactive)
+  (lbb-remove-agenda-commands)
+  (lbb-add-agenda-commands))
 
 ;;; testing
 
