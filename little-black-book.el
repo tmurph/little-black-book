@@ -119,7 +119,7 @@
     (maphash 'format-first-letter-table-for-captures initials-hash)
     (push (make-a-capture-prefix prefix label) *list-of-outputs*)))
 
-(defun add-lbb-capture-templates ()
+(defun lbb-add-capture-templates ()
   "Add capture templates for names in the little black book."
   (let ((*table-of-inputs* (make-hash-table :test 'equal))
         *list-of-outputs*)
@@ -132,7 +132,7 @@
       (setf org-capture-templates
             (append org-capture-templates *list-of-outputs*)))))
 
-(defun remove-lbb-capture-templates ()
+(defun lbb-remove-capture-templates ()
   "Remove capture templates created from the little black book."
   (setf org-capture-templates
         (-remove #'(lambda (elt)
@@ -140,11 +140,11 @@
                             (substring-no-properties (car elt) 0 1)))
                  org-capture-templates)))
 
-(defun set-up-lbb-capture-templates ()
+(defun lbb-set-up-capture-templates ()
   "Set up little black book capture templates."
   (interactive)
-  (remove-lbb-capture-templates)
-  (add-lbb-capture-templates))
+  (lbb-remove-capture-templates)
+  (lbb-add-capture-templates))
 
 (provide 'little-black-book)
 ;;; little-black-book.el ends here
