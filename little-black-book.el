@@ -142,6 +142,14 @@
       (org-map-entries 'add-person-at-point-to-big-table "+LEVEL=1"))
     *table-of-inputs*))
 
+(defun lbb-build-list-of-captures (table)
+  "Format TABLE entries into capture output format."
+  (let (*list-of-outputs*)
+    (maphash 'format-big-table-for-captures table)
+    (push (make-a-capture-prefix black-book-capture-prefix "People")
+          *list-of-outputs*)
+    *list-of-outputs*))
+
 (defun lbb-add-capture-templates ()
   "Add capture templates for names in the little black book."
   (let ((*table-of-inputs* (make-hash-table :test 'equal))
