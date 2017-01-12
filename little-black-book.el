@@ -152,16 +152,12 @@
 
 (defun lbb-add-capture-templates ()
   "Add capture templates for names in the little black book."
-  (let ((*table-of-inputs* (make-hash-table :test 'equal))
-        *list-of-outputs*)
-    (with-current-buffer (find-file-noselect
-                          (expand-file-name black-book-file org-directory))
-      (org-map-entries 'add-person-at-point-to-big-table "+LEVEL=1")
-      (maphash 'format-big-table *table-of-inputs*)
-      (push (make-a-capture-prefix black-book-capture-prefix "People")
-            *list-of-outputs*)
-      (setf org-capture-templates
-            (append org-capture-templates *list-of-outputs*)))))
+  (setf org-capture-templates
+        (append org-capture-templates
+                (lbb-build-list-of-captures
+                 (lbb-build-table-of-inputs
+                  (find-file-noselect
+                   (expand-file-name black-book-file org-directory)))))))
 
 (defun lbb-remove-capture-templates ()
   "Remove capture templates created from the little black book."
